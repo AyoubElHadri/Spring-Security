@@ -30,27 +30,40 @@ public class ApplicationSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
 
-         http.authorizeRequests().antMatchers("/", "index").permitAll()
-        .anyRequest().authenticated().and().httpBasic();
+         http
+                 .authorizeRequests()
+                 .antMatchers("/", "index").permitAll()
+                 .antMatchers("/api/**").hasRole(ApplicationUserRole.STUDENT.name())
+                 .anyRequest()
+                 .authenticated()
+                 .and()
+                 .httpBasic();
+
         return http.build();
     }
 
     @Bean
     protected UserDetailsService userDetailsService(){
-       UserDetails lalo = User.builder()
+       UserDetails laloUser = User.builder()
                 .username("lalo")
-                .password(passwordEncoder.encode("opop"))
+                .password(passwordEncoder.encode("user"))
                 .roles(ApplicationUserRole.STUDENT.name())
                .build();
-        UserDetails gustavo = User.builder()
+        UserDetails gustavoUser = User.builder()
                 .username("gustavo")
-                .password(passwordEncoder.encode("opop"))
+                .password(passwordEncoder.encode("admin"))
                 .roles(ApplicationUserRole.ADMIN.name())
+                .build();
+        UserDetails jesseUser = User.builder()
+                .username("jesse")
+                .password(passwordEncoder.encode("trainee"))
+                .roles(ApplicationUserRole.ADMINTRAINEE.name())
                 .build();
 
         return new InMemoryUserDetailsManager(
-                gustavo,
-                lalo
+                gustavoUser,
+                laloUser,
+                jesseUser
         );
     }
 
