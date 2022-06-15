@@ -1,10 +1,16 @@
 package com.example.springsecurity.security;
 
 import com.example.springsecurity.SpringSecurityApplication;
+import com.example.springsecurity.auth.ApplicationUserService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.WebSecurityConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,6 +28,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableWebSecurity
@@ -30,6 +39,9 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 public class ApplicationSecurityConfig {
 
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationUserService applicationUserService;
+
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
@@ -52,12 +64,28 @@ public class ApplicationSecurityConfig {
                  .authenticated()
                  .and()
                  .formLogin()
-                 .loginPage("/login").permitAll();
+                     .loginPage("/login").permitAll()
+                     .defaultSuccessUrl("/courses",true)
+//                     .passwordParameter("password")
+//                     .usernameParameter("username")
+                 .and()
+                 .rememberMe()
+                     .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(30))
+                     .key("secured");
+//                    .rememberMeParameter("remember-me");
+/*                 .and()
+                 .logout()
+                 .logoutUrl("/logout")
+                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                 .clearAuthentication(true)
+                 .invalidateHttpSession(true)
+                 .deleteCookies("JSESSIONID", "remember-me")
+                 .logoutSuccessUrl("/login");*/
 
         return http.build();
     }
 
-    @Bean
+    /*@Bean
     protected UserDetailsService userDetailsService(){
        UserDetails laloUser = User.builder()
                 .username("lalo")
@@ -85,9 +113,22 @@ public class ApplicationSecurityConfig {
                 laloUser,
                 jesseUser
         );
-    }
+    }*/
+/*    protected void configure(AuthenticationManagerBuilder auth) throws Exception{
+        auth.authenticationProvider(daoAuthenticationProvider());
+    }*/
 
+
+    protected AuthenticationManager authenticationManager(AuthenticationManagerBuilder builder) throws Exception {
+        return (AuthenticationManager) builder.authenticationProvider(daoAuthenticationProvider());
+    }
+    @Bean
+public DaoAuthenticationProvider daoAuthenticationProvider(){
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+    provider.setPasswordEncoder(passwordEncoder);
+    provider.setUserDetailsService(applicationUserService);
+    return provider;
+}
 
 
 }
-//- http authorizeRequest (create whitelist) antmatcher(indexcssjs) permitall anyrequest athenticationand httpbasic
